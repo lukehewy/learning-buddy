@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>学习小助手</title>
+<style>
+  :root{
+    --teal:#0d5c4d; --teal2:#12805c; --bg:#f4f6f5; --card:#ffffff;
+    --ink:#1c2b27; --muted:#6b7a75; --line:#e2eae7; --accent:#ffb020;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:640px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;}
+  /* header */
+  .hero{margin:14px 14px 10px;border-radius:22px;padding:20px 20px 16px;color:#fff;
+    background:linear-gradient(135deg,var(--teal) 0%,var(--teal2) 100%);
+    box-shadow:0 8px 22px rgba(13,92,77,.25);}
+  .hero-row{display:flex;align-items:center;gap:12px;}
+  .hero-badge{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.16);
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+  .hero h1{font-size:24px;margin:0;line-height:1.2;}
+  .hero p{margin:3px 0 0;font-size:14px;opacity:.85;}
+  .hero .who{margin-left:auto;text-align:right;font-size:13px;opacity:.9;}
+  .hero .who button{margin-top:4px;background:rgba(255,255,255,.18);color:#fff;border:0;
+    border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;}
+  /* login */
+  .card{background:var(--card);border-radius:22px;padding:22px 20px;margin:10px 14px;
+    box-shadow:0 2px 10px rgba(20,40,35,.06);}
+  .card h2{margin:0 0 6px;font-size:20px;}
+  .card .sub{color:var(--muted);font-size:14px;margin:0 0 16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px;}
+  .field input{width:100%;font-size:18px;padding:14px 16px;border:1.5px solid var(--line);
+    border-radius:14px;outline:none;background:#fbfcfc;}
+  .field input:focus{border-color:var(--teal2);}
+  .bigbtn{width:100%;border:0;border-radius:16px;padding:16px;font-size:18px;font-weight:600;
+    color:#fff;background:linear-gradient(135deg,var(--teal),var(--teal2));cursor:pointer;}
+  .bigbtn:disabled{opacity:.55;}
+  .err{display:none;margin-top:12px;color:#b3261e;font-size:15px;background:#fdecea;
+    border-radius:12px;padding:10px 14px;}
+  /* kb selector */
+  .kbrow{display:flex;gap:10px;margin:4px 14px 6px;}
+  .kbchip{flex:1;border:2px solid var(--line);background:#fff;border-radius:16px;padding:12px 10px;
+    font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink);}
+  .kbchip.on{border-color:var(--teal);background:#e9f5f1;font-weight:600;}
+  .kbchip .dot{width:9px;height:9px;border-radius:50%;background:#c8d4d0;flex:0 0 auto;}
+  .kbchip.on .dot{background:var(--teal2);}
+  /* messages */
+  #msgs{flex:1;overflow-y:auto;padding:8px 14px 12px;display:flex;flex-direction:column;gap:12px;}
+  .msg{max-width:88%;padding:13px 16px;border-radius:18px;font-size:17px;line-height:1.65;
+    white-space:pre-wrap;word-break:break-word;}
+  .msg.user{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:6px;}
+  .msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);
+    border-bottom-left-radius:6px;box-shadow:0 1px 4px rgba(20,40,35,.05);}
+  .msg.bot h3{font-size:18px;margin:10px 0 4px;}
+  .msg.bot h4{font-size:17px;margin:10px 0 4px;}
+  .msg.bot p{margin:6px 0;}
+  .msg.bot ul{margin:6px 0;padding-left:22px;}
+  .status{align-self:flex-start;color:var(--muted);font-size:14px;padding:2px 6px;display:flex;gap:8px;align-items:center;}
+  .spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--teal2);
+    border-radius:50%;animation:sp 0.8s linear infinite;}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .sources{align-self:flex-start;max-width:88%;font-size:13.5px;color:var(--muted);
+    background:#eef3f1;border-radius:12px;padding:9px 13px;line-height:1.7;}
+  .sources a{color:var(--teal);text-decoration:none;font-weight:600;}
+  /* input bar */
+  .bar{position:sticky;bottom:0;background:var(--bg);padding:10px 14px calc(12px + env(safe-area-inset-bottom));}
+  .bar-in{display:flex;gap:10px;align-items:flex-end;background:#fff;border:1.5px solid var(--line);
+    border-radius:20px;padding:8px 8px 8px 16px;box-shadow:0 4px 14px rgba(20,40,35,.08);}
+  #q{flex:1;border:0;outline:none;font-size:17px;resize:none;max-height:110px;line-height:1.5;
+    font-family:inherit;background:transparent;padding:6px 0;}
+  #send{width:48px;height:48px;border-radius:50%;border:0;flex:0 0 auto;cursor:pointer;
+    background:linear-gradient(135deg,var(--teal),var(--teal2));display:flex;align-items:center;justify-content:center;}
+  #send:disabled{opacity:.45;}
+  .hint{text-align:center;color:var(--muted);font-size:12.5px;margin-top:8px;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-row">
+      <div class="hero-badge">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 5.5C6.5 4 9.5 4 12 5.5C14.5 4 17.5 4 20 5.5V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0V5.5Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 5.5V19" stroke="#fff" stroke-width="1.8"/></svg>
+      </div>
+      <div>
+        <h1>学习小助手</h1>
+        <p>问问题 · 找答案 · 看出处</p>
+      </div>
+      <div class="who hidden" id="whoBox">
+        <div id="whoName"></div>
+        <button id="logoutBtn" type="button">退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- login -->
+  <div id="loginView">
+    <div class="card">
+      <h2>登录</h2>
+      <p class="sub">用管理员给你的账号登录。没有账号？请联系管理员开通。</p>
+      <div class="field">
+        <label for="username">用户名</label>
+        <input id="username" type="text" autocomplete="username" placeholder="请输入用户名">
+      </div>
+      <div class="field">
+        <label for="password">密码</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="请输入密码">
+      </div>
+      <button class="bigbtn" id="loginBtn" type="button">登 录</button>
+      <div class="err" id="loginErr"></div>
+    </div>
+  </div>
+
+  <!-- chat -->
+  <div id="chatView" class="hidden" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+    <div class="kbrow">
+      <button class="kbchip on" id="kbOn" type="button"><span class="dot"></span>查经资料库</button>
+      <button class="kbchip" id="kbOff" type="button"><span class="dot"></span>自由提问</button>
+    </div>
+    <div id="msgs">
+      <div class="msg bot">你好，我是学习小助手。选「查经资料库」问圣经问题，我会查哥林多前后书的资料再回答，并附上出处；选「自由提问」可以问任何学习问题。</div>
+    </div>
+    <div class="bar">
+      <div class="bar-in">
+        <textarea id="q" rows="1" placeholder="输入你的问题…"></textarea>
+        <button id="send" type="button" aria-label="发送">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M12 5l-6 6M12 5l6 6" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="hint">回答由 AI 生成，重要内容请对照出处原文核实</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = "https://vps-842f466c.vps.ovh.ca:8443";
+const WS_URL = "wss://vps-842f466c.vps.ovh.ca:8443/ws";
+const KB_ID = "admin:kb:哥林多前后书";
+
+let ws = null, sessionId = null, useKB = true, busy = false;
+let curBot = null, curSources = null, statusEl = null;
+
+const $ = id => document.getElementById(id);
+const msgs = $("msgs");
+
+function showChat(name){
+  $("loginView").classList.add("hidden");
+  const cv = $("chatView"); cv.classList.remove("hidden");
+  $("whoBox").classList.remove("hidden");
+  if(name) $("whoName").textContent = name;
+  connectWS();
+}
+function showLogin(){
+  $("chatView").classList.add("hidden");
+  $("loginView").classList.remove("hidden");
+  $("whoBox").classList.add("hidden");
+  if(ws){ try{ ws.close(); }catch(e){} ws = null; }
+}
+
+async function checkSession(){
+  try{
+    const r = await fetch(API + "/api/auth/status", {credentials:"include"});
+    if(r.ok){
+      const d = await r.json();
+      if(d && (d.authenticated || d.username || d.user)){ showChat(d.username || (d.user && d.user.username) || ""); return; }
+    }
+  }catch(e){}
+  showLogin();
+}
+
+async function doLogin(){
+  const u = $("username").value.trim(), p = $("password").value;
+  const err = $("loginErr"); err.style.display = "none";
+  if(!u || !p){ err.textContent = "用户名和密码都要填。"; err.style.display = "block"; return; }
+  $("loginBtn").disabled = true; $("loginBtn").textContent = "登录中…";
+  try{
+    const r = await fetch(API + "/api/auth/login", {
+      method:"POST", credentials:"include",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const d = await r.json().catch(()=>({}));
+    if(r.ok && d.ok !== false){ showChat(d.username || u); }
+    else { err.textContent = "登录失败：用户名或密码不对。"; err.style.display = "block"; }
+  }catch(e){
+    err.textContent = "连不上服务器，请检查网络后再试。"; err.style.display = "block";
+  }
+  $("loginBtn").disabled = false; $("loginBtn").textContent = "登 录";
+}
+
+async function doLogout(){
+  try{ await fetch(API + "/api/auth/logout", {method:"POST", credentials:"include"}); }catch(e){}
+  sessionId = null; showLogin();
+}
+
+function connectWS(){
+  if(ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+  ws = new WebSocket(WS_URL);
+  ws.onmessage = onFrame;
+  ws.onclose = () => { ws = null; };
+  ws.onerror = () => { try{ ws.close(); }catch(e){} };
+}
+
+function setStatus(text){
+  clearStatus();
+  statusEl = document.createElement("div");
+  statusEl.className = "status";
+  statusEl.innerHTML = '<div class="spin"></div><span></span>';
+  statusEl.querySelector("span").textContent = text;
+  msgs.appendChild(statusEl);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function clearStatus(){ if(statusEl){ statusEl.remove(); statusEl = null; } }
+
+function addMsg(cls, text){
+  const d = document.createElement("div");
+  d.className = "msg " + cls;
+  d.textContent = text;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+/* minimal, safe markdown-ish rendering for the bot text */
+function renderBot(el, raw){
+  let h = raw
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/^### (.*)$/gm, "<h4>$1</h4>")
+    .replace(/^## (.*)$/gm, "<h3>$1</h3>")
+    .replace(/^# (.*)$/gm, "<h3>$1</h3>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/^\s*[-•] (.*)$/gm, "• $1")
+    .replace(/\n{2,}/g, "<br><br>")
+    .replace(/\n/g, "<br>");
+  el.innerHTML = h;
+}
+
+function showSources(list){
+  if(!list || !list.length) return;
+  const box = document.createElement("div");
+  box.className = "sources";
+  let html = "出处：";
+  const seen = new Set();
+  list.forEach(s => {
+    const title = (s.title || "").replace(/\.md$/i, "");
+    if(!title || seen.has(title)) return;
+    seen.add(title);
+    const m = (s.content || "").match(/https?:\/\/[^\s)）]+/);
+    if(m) html += ' <a href="' + m[0] + '" target="_blank" rel="noopener">' + title + "</a> ·";
+    else html += " " + title + " ·";
+  });
+  box.innerHTML = html.replace(/·\s*$/, "");
+  msgs.appendChild(box);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function detectLang(text){
+  const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+  const lat = (text.match(/[a-zA-Z]/g) || []).length;
+  return cjk >= lat ? "zh" : "en";
+}
+
+function onFrame(ev){
+  let m; try{ m = JSON.parse(ev.data); }catch(e){ return; }
+  const t = m.type;
+  if(t === "session"){ if(m.session_id) sessionId = m.session_id; return; }
+  if(t === "sources"){ curSources = (m.metadata && m.metadata.sources) || []; return; }
+  if(t === "progress" || t === "stage_start"){
+    if(busy && !curBot) setStatus(useKB ? "正在查资料…" : "正在思考…");
+    return;
+  }
+  if(t === "content"){
+    if(!curBot){ clearStatus(); curBot = addMsg("bot", ""); curBot._raw = ""; }
+    curBot._raw += (m.content || "");
+    renderBot(curBot, curBot._raw);
+    msgs.scrollTop = msgs.scrollHeight;
+    return;
+  }
+  if(t === "error" || t === "protocol_error"){
+    clearStatus();
+    addMsg("bot", "出了点问题：" + (m.content || m.message || "请稍后再试。"));
+    busy = false; $("send").disabled = false;
+    return;
+  }
+  if(t === "done" || t === "result"){
+    if(t === "done"){
+      clearStatus();
+      if(curSources) showSources(curSources);
+      curBot = null; curSources = null;
+      busy = false; $("send").disabled = false;
+    }
+    return;
+  }
+}
+
+function send(){
+  const text = $("q").value.trim();
+  if(!text || busy) return;
+  addMsg("user", text);
+  $("q").value = ""; $("q").style.height = "auto";
+  busy = true; $("send").disabled = true;
+  curBot = null; curSources = null;
+  setStatus(useKB ? "正在查资料…" : "正在思考…");
+  const payload = {
+    type: "message", protocol_version: "2.0",
+    content: text,
+    knowledge_bases: useKB ? [KB_ID] : [],
+    language: detectLang(text)
+  };
+  if(sessionId) payload.session_id = sessionId;
+  const go = () => { try{ ws.send(JSON.stringify(payload)); }catch(e){ retry(); } };
+  const retry = () => {
+    clearStatus();
+    addMsg("bot", "连接断开了，正在重连…请再发一次刚才的问题。");
+    busy = false; $("send").disabled = false;
+    connectWS();
+  };
+  if(ws && ws.readyState === 1) go();
+  else { connectWS(); setTimeout(() => { if(ws && ws.readyState === 1) go(); else retry(); }, 2500); }
+}
+
+$("loginBtn").addEventListener("click", doLogin);
+$("password").addEventListener("keydown", e => { if(e.key === "Enter") doLogin(); });
+$("logoutBtn").addEventListener("click", doLogout);
+$("send").addEventListener("click", send);
+$("q").addEventListener("keydown", e => {
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); send(); }
+});
+$("q").addEventListener("input", () => {
+  $("q").style.height = "auto";
+  $("q").style.height = Math.min($("q").scrollHeight, 110) + "px";
+});
+$("kbOn").addEventListener("click", () => { useKB = true; $("kbOn").classList.add("on"); $("kbOff").classList.remove("on"); sessionId = null; });
+$("kbOff").addEventListener("click", () => { useKB = false; $("kbOff").classList.add("on"); $("kbOn").classList.remove("on"); sessionId = null; });
+
+checkSession();
+</script>
+</body>
+</html>
