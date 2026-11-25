@@ -318,7 +318,7 @@ function send(){
     type: "message", protocol_version: "2.0",
     content: text,
     capability: mode,
-    knowledge_bases: (mode !== "deep_solve" && kbSel) ? [kbSel] : [],
+    knowledge_bases: kbSel ? [kbSel] : [],
     language: detectLang(text)
   };
   if(sessionId) payload.session_id = sessionId;
@@ -362,7 +362,7 @@ function setMode(m){
   $("modeChat").classList.toggle("on", m === "chat");
   $("modeQuiz").classList.toggle("on", m === "deep_question");
   $("modeSolve").classList.toggle("on", m === "deep_solve");
-  $("kbRow").style.display = (m === "deep_solve") ? "none" : "flex";
+  $("kbRow").style.display = "flex";
   $("q").placeholder =
     m === "deep_question" ? "输入出题范围，如：哥林多前书十四章…" :
     m === "deep_solve" ? "输入要解的题目…" : "输入你的问题…";
