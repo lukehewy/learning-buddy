@@ -123,11 +123,12 @@
       <button class="kbchip" id="modeSolve" type="button"><span class="dot"></span>解题</button>
     </div>
     <div class="kbrow" id="kbRow">
-      <button class="kbchip on" id="kbOn" type="button"><span class="dot"></span>查经资料库</button>
+      <button class="kbchip on" id="kbBible" type="button"><span class="dot"></span>查经资料库</button>
+      <button class="kbchip" id="kbOntario" type="button"><span class="dot"></span>安省课标</button>
       <button class="kbchip" id="kbOff" type="button"><span class="dot"></span>自由提问</button>
     </div>
     <div id="msgs">
-      <div class="msg bot">你好，我是学习小助手。上边选模式：「提问」问问题、看出处；「出题」照着资料出题练习（要等两三分钟）；「解题」把题目发给我，我一步步解给你看。查经问题记得开「查经资料库」。</div>
+      <div class="msg bot">你好，我是学习小助手。上边选模式：「提问」问问题、看出处；「出题」照着资料出题练习（要等两三分钟）；「解题」把题目发给我，我一步步解给你看。查经问题选「查经资料库」；问安省中小学课程、课标，选「安省课标」。</div>
     </div>
     <div class="bar">
       <div class="bar-in">
@@ -145,9 +146,10 @@
 <script>
 const API = "https://vps-842f466c.vps.ovh.ca:8443";
 const WS_URL = "wss://vps-842f466c.vps.ovh.ca:8443/ws";
-const KB_ID = "admin:kb:哥林多前后书";
+const KB_BIBLE = "admin:kb:哥林多前后书";
+const KB_ONTARIO = "admin:kb:安省中小学课程大纲";
 
-let ws = null, sessionId = null, useKB = true, busy = false;
+let ws = null, sessionId = null, kbSel = KB_BIBLE, busy = false;
 let mode = "chat";
 let curBot = null, curSources = null, statusEl = null;
 
@@ -316,7 +318,7 @@ function send(){
     type: "message", protocol_version: "2.0",
     content: text,
     capability: mode,
-    knowledge_bases: (mode !== "deep_solve" && useKB) ? [KB_ID] : [],
+    knowledge_bases: (mode !== "deep_solve" && kbSel) ? [kbSel] : [],
     language: detectLang(text)
   };
   if(sessionId) payload.session_id = sessionId;
@@ -342,13 +344,18 @@ $("q").addEventListener("input", () => {
   $("q").style.height = "auto";
   $("q").style.height = Math.min($("q").scrollHeight, 110) + "px";
 });
-$("kbOn").addEventListener("click", () => { useKB = true; $("kbOn").classList.add("on"); $("kbOff").classList.remove("on"); sessionId = null; });
-$("kbOff").addEventListener("click", () => { useKB = false; $("kbOff").classList.add("on"); $("kbOn").classList.remove("on"); sessionId = null; });
+function selectKB(sel, btn){
+  kbSel = sel; sessionId = null;
+  ["kbBible","kbOntario","kbOff"].forEach(id => $(id).classList.toggle("on", id === btn));
+}
+$("kbBible").addEventListener("click", () => selectKB(KB_BIBLE, "kbBible"));
+$("kbOntario").addEventListener("click", () => selectKB(KB_ONTARIO, "kbOntario"));
+$("kbOff").addEventListener("click", () => selectKB(null, "kbOff"));
 
 function statusText(){
   if(mode === "deep_question") return "正在出题，要等两三分钟，别关页面…";
   if(mode === "deep_solve") return "正在解题…";
-  return useKB ? "正在查资料…" : "正在思考…";
+  return kbSel ? "正在查资料…" : "正在思考…";
 }
 function setMode(m){
   mode = m; sessionId = null;
