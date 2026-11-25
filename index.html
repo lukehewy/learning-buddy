@@ -114,6 +114,11 @@
       <div class="kbchip" id="kbComp" onclick="selectKB('comp')">🏆 Contests</div>
       <div class="kbchip" id="kbOff" onclick="selectKB('off')">🌐 Free</div>
     </div>
+    <div class="kbrow" id="langRow">
+      <span class="kblabel">Answer in:</span>
+      <div class="kbchip on" id="langEn" onclick="setLang('en')">English</div>
+      <div class="kbchip" id="langZh" onclick="setLang('zh')">中文</div>
+    </div>
     <div id="picker"></div>
     <div id="msgs"></div>
     <div class="composer">
@@ -131,6 +136,15 @@ const KB_COMP = "admin:kb:数学竞赛";
 let mode = "chat";
 let kbSel = KB_BIBLE;
 let busy = false;
+let uiLang = "en";
+try { uiLang = localStorage.getItem("lb_lang") || "en"; } catch (e) {}
+function setLang(l) {
+  uiLang = l;
+  try { localStorage.setItem("lb_lang", l); } catch (e) {}
+  $("langEn").classList.toggle("on", l === "en");
+  $("langZh").classList.toggle("on", l === "zh");
+}
+setLang(uiLang);
 const $ = id => document.getElementById(id);
 
 /* ---------- selection data ---------- */
@@ -326,24 +340,38 @@ function sendMsg() {
   addMsg("me", text);
   $("q").value = "";
   busy = true; $("sendBtn").disabled = true;
-  const bubble = addMsg("ai", "Thinking…");
-  let acc = "", sources = [], started = false;
+  const bubble = addMsg("ai", "");
+  let acc = "", sources = [], started = false, stage = "";
+  const t0 = Date.now();
+  const renderThink = () => {
+    if (started) return;
+    const el = Date.now() - t0;
+    const s = Math.floor(el / 1000);
+    const dots = ".".repeat(1 + (Math.floor(el / 600) % 3));
+    bubble.textContent = (uiLang === "zh" ? "思考中" : "Thinking") + dots + (stage ? " " + stage : "") + " (" + s + "s)";
+  };
+  renderThink();
+  const thinkTimer = setInterval(renderThink, 300);
+  const langInstr = uiLang === "zh" ? "请用中文回答。\n" : "Please answer in English.\n";
   const payload = {
     type: "message", protocol_version: "2.0",
-    content: scope + text,
+    content: langInstr + scope + text,
     capability: mode,
     knowledge_bases: kbSel ? [kbSel] : [],
-    language: detectLang(text)
+    language: uiLang
   };
   const ws = new WebSocket("wss://vps-842f466c.vps.ovh.ca:8443/ws");
-  const done = () => { busy = false; $("sendBtn").disabled = false; try { ws.close(); } catch (e) {} };
+  const done = () => { clearInterval(thinkTimer); busy = false; $("sendBtn").disabled = false; try { ws.close(); } catch (e) {} };
   ws.onopen = () => ws.send(JSON.stringify(payload));
   ws.onmessage = ev => {
     let f; try { f = JSON.parse(ev.data); } catch (e) { return; }
     if (f.type === "content" && f.content) {
-      if (!started) { started = true; bubble.innerHTML = ""; }
+      if (!started) { started = true; clearInterval(thinkTimer); bubble.innerHTML = ""; }
       acc += f.content; bubble.innerHTML = md(acc);
       bubble.scrollIntoView({behavior: "smooth", block: "end"});
+    } else if (f.type === "progress" || f.type === "stage_start") {
+      const st = f.content || f.stage || (f.metadata && (f.metadata.stage || f.metadata.message)) || "";
+      if (st && !started) stage = String(st).slice(0, 60);
     } else if (f.type === "sources" && f.metadata && f.metadata.sources) {
       sources = f.metadata.sources;
     } else if (f.type === "error") {
