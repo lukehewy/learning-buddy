@@ -105,6 +105,7 @@
       <span class="kblabel">Library:</span>
       <div class="kbchip on" id="kbBible" onclick="selectKB('bible')">📖 Bible Study</div>
       <div class="kbchip" id="kbOntario" onclick="selectKB('ontario')">🏫 Ontario</div>
+      <div class="kbchip" id="kbComp" onclick="selectKB('comp')">🏆 Contests</div>
       <div class="kbchip" id="kbOff" onclick="selectKB('off')">🌐 Free Ask</div>
     </div>
     <div id="courseRow">
@@ -169,6 +170,7 @@
 const API = "https://vps-842f466c.vps.ovh.ca:8443";
 const KB_BIBLE = "admin:kb:哥林多前后书";
 const KB_ONTARIO = "admin:kb:安省中小学课程大纲";
+const KB_COMP = "admin:kb:数学竞赛";
 let mode = "chat";
 let kbSel = KB_BIBLE;
 let busy = false;
@@ -183,9 +185,10 @@ function setMode(m) {
                        m === "deep_solve" ? "Paste the problem here…" : "Type your question…";
 }
 function selectKB(k) {
-  kbSel = k === "bible" ? KB_BIBLE : k === "ontario" ? KB_ONTARIO : null;
+  kbSel = k === "bible" ? KB_BIBLE : k === "ontario" ? KB_ONTARIO : k === "comp" ? KB_COMP : null;
   $("kbBible").classList.toggle("on", k === "bible");
   $("kbOntario").classList.toggle("on", k === "ontario");
+  $("kbComp").classList.toggle("on", k === "comp");
   $("kbOff").classList.toggle("on", k === "off");
   $("courseRow").style.display = (k === "ontario") ? "block" : "none";
 }
